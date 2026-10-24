@@ -102,49 +102,252 @@ class CompressionApp:
     def __init__(self, root):
         self.root = root
         self.root.title(APP_NAME)
-        self.root.geometry("760x560")
-        self.root.minsize(650, 500)
+        self.root.geometry("900x700")
+        self.root.minsize(700, 600)
         self.file_path = tk.StringVar()
         self.algorithm = tk.StringVar(value="BZIP2")
         self.level = tk.IntVar(value=6)
         self.status = tk.StringVar(value="Choisis un fichier pour commencer.")
+        self.level_hint = tk.StringVar()
+        self._configure_style()
         self._build_ui()
+        self._on_algorithm_change()
+
+    def _configure_style(self):
+        style = ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+
+        self.colors = {
+            "background": "#f3f6fb",
+            "surface": "#ffffff",
+            "header": "#172554",
+            "primary": "#2563eb",
+            "primary_active": "#1d4ed8",
+            "text": "#172033",
+            "muted": "#64748b",
+            "border": "#dbe3ef",
+            "success": "#15803d",
+        }
+        style.configure("App.TFrame", background=self.colors["background"])
+        style.configure("Header.TFrame", background=self.colors["header"])
+        style.configure("Body.TFrame", background=self.colors["surface"])
+        style.configure(
+            "HeaderTitle.TLabel",
+            background=self.colors["header"],
+            foreground="#ffffff",
+            font=("Segoe UI", 24, "bold"),
+        )
+        style.configure(
+            "HeaderSub.TLabel",
+            background=self.colors["header"],
+            foreground="#cbd5e1",
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "Eyebrow.TLabel",
+            background=self.colors["header"],
+            foreground="#93c5fd",
+            font=("Segoe UI", 9, "bold"),
+        )
+        style.configure(
+            "Section.TLabelframe",
+            background=self.colors["surface"],
+            bordercolor=self.colors["border"],
+            relief="solid",
+            borderwidth=1,
+        )
+        style.configure(
+            "Section.TLabelframe.Label",
+            background=self.colors["surface"],
+            foreground=self.colors["text"],
+            font=("Segoe UI", 10, "bold"),
+        )
+        style.configure(
+            "Section.TLabel",
+            background=self.colors["surface"],
+            foreground=self.colors["text"],
+            font=("Segoe UI", 10),
+        )
+        style.configure(
+            "Hint.TLabel",
+            background=self.colors["surface"],
+            foreground=self.colors["muted"],
+            font=("Segoe UI", 9),
+        )
+        style.configure(
+            "Primary.TButton",
+            background=self.colors["primary"],
+            foreground="#ffffff",
+            font=("Segoe UI", 10, "bold"),
+            padding=(16, 10),
+            borderwidth=0,
+        )
+        style.map(
+            "Primary.TButton",
+            background=[("active", self.colors["primary_active"]), ("disabled", "#94a3b8")],
+            foreground=[("disabled", "#ffffff")],
+        )
+        style.configure(
+            "Secondary.TButton",
+            background="#e8eef8",
+            foreground=self.colors["text"],
+            font=("Segoe UI", 10, "bold"),
+            padding=(14, 9),
+            borderwidth=0,
+        )
+        style.map("Secondary.TButton", background=[("active", "#d8e2f1")])
+        style.configure(
+            "Status.TLabel",
+            background=self.colors["background"],
+            foreground=self.colors["success"],
+            font=("Segoe UI", 9, "bold"),
+        )
+        style.configure(
+            "TEntry",
+            fieldbackground="#f8fafc",
+            foreground=self.colors["text"],
+            padding=9,
+        )
+        style.configure(
+            "TCombobox",
+            fieldbackground="#f8fafc",
+            foreground=self.colors["text"],
+            padding=6,
+        )
+        style.configure("TSpinbox", padding=6)
 
     def _build_ui(self):
-        outer = ttk.Frame(self.root, padding=22)
+        outer = ttk.Frame(self.root, style="App.TFrame", padding=24)
         outer.pack(fill="both", expand=True)
 
-        ttk.Label(outer, text="CompressLab", font=("Arial", 23, "bold")).pack(anchor="w")
-        ttk.Label(outer, text="Compression • Décompression • Mesures", font=("Arial", 11)).pack(anchor="w", pady=(0, 18))
+        header = ttk.Frame(outer, style="Header.TFrame", padding=(22, 18))
+        header.pack(fill="x", pady=(0, 16))
+        ttk.Label(
+            header, text="OUTIL DE COMPRESSION", style="Eyebrow.TLabel"
+        ).pack(anchor="w")
+        ttk.Label(
+            header, text="CompressLab", style="HeaderTitle.TLabel"
+        ).pack(anchor="w", pady=(3, 0))
+        ttk.Label(
+            header,
+            text="Compresse, décompresse et compare tes fichiers en quelques clics.",
+            style="HeaderSub.TLabel",
+        ).pack(anchor="w", pady=(4, 0))
 
-        file_frame = ttk.LabelFrame(outer, text="1. Fichier à traiter", padding=12)
-        file_frame.pack(fill="x", pady=6)
-        row = ttk.Frame(file_frame)
+        file_frame = ttk.LabelFrame(
+            outer, text="  1  ·  Fichier à traiter  ", style="Section.TLabelframe", padding=14
+        )
+        file_frame.pack(fill="x", pady=(0, 12))
+        row = ttk.Frame(file_frame, style="Body.TFrame")
         row.pack(fill="x")
-        ttk.Entry(row, textvariable=self.file_path).pack(side="left", fill="x", expand=True, padx=(0, 8))
-        ttk.Button(row, text="Parcourir…", command=self.choose_file).pack(side="right")
+        ttk.Entry(row, textvariable=self.file_path).pack(
+            side="left", fill="x", expand=True, padx=(0, 10)
+        )
+        ttk.Button(
+            row, text="Parcourir…", command=self.choose_file, style="Secondary.TButton"
+        ).pack(side="right")
 
-        opts = ttk.LabelFrame(outer, text="2. Paramètres", padding=12)
-        opts.pack(fill="x", pady=6)
-        ttk.Label(opts, text="Algorithme :").grid(row=0, column=0, sticky="w", padx=(0, 8), pady=4)
-        combo = ttk.Combobox(opts, textvariable=self.algorithm, values=("BZIP2", "LZMA", "7-Zip"), state="readonly", width=16)
-        combo.grid(row=0, column=1, sticky="w", pady=4)
-        ttk.Label(opts, text="Niveau (0–9 pour LZMA/7-Zip, 1–9 pour BZIP2) :").grid(row=1, column=0, sticky="w", padx=(0, 8), pady=4)
-        ttk.Spinbox(opts, from_=0, to=9, textvariable=self.level, width=6).grid(row=1, column=1, sticky="w", pady=4)
+        options = ttk.LabelFrame(
+            outer, text="  2  ·  Paramètres  ", style="Section.TLabelframe", padding=14
+        )
+        options.pack(fill="x", pady=(0, 12))
+        options.columnconfigure(1, weight=1)
+        ttk.Label(options, text="Algorithme", style="Section.TLabel").grid(
+            row=0, column=0, sticky="w", padx=(0, 18), pady=(0, 5)
+        )
+        self.algorithm_combo = ttk.Combobox(
+            options,
+            textvariable=self.algorithm,
+            values=("BZIP2", "LZMA", "7-Zip"),
+            state="readonly",
+            width=18,
+        )
+        self.algorithm_combo.grid(row=0, column=1, sticky="ew", pady=(0, 5))
+        self.algorithm_combo.bind("<<ComboboxSelected>>", self._on_algorithm_change)
 
-        actions = ttk.Frame(outer)
-        actions.pack(fill="x", pady=12)
-        ttk.Button(actions, text="Compresser", command=self.compress).pack(side="left", padx=(0, 8))
-        ttk.Button(actions, text="Décompresser", command=self.decompress).pack(side="left", padx=(0, 8))
-        ttk.Button(actions, text="Effacer les résultats", command=self.clear).pack(side="left")
+        ttk.Label(options, text="Niveau de compression", style="Section.TLabel").grid(
+            row=1, column=0, sticky="w", padx=(0, 18), pady=(5, 0)
+        )
+        level_row = ttk.Frame(options, style="Body.TFrame")
+        level_row.grid(row=1, column=1, sticky="ew", pady=(5, 0))
+        self.level_spinbox = ttk.Spinbox(
+            level_row, from_=1, to=9, textvariable=self.level, width=6
+        )
+        self.level_spinbox.pack(side="left", padx=(0, 10))
+        ttk.Label(level_row, textvariable=self.level_hint, style="Hint.TLabel").pack(
+            side="left", fill="x", expand=True
+        )
 
-        results = ttk.LabelFrame(outer, text="3. Résultats", padding=12)
-        results.pack(fill="both", expand=True, pady=4)
-        self.output = tk.Text(results, height=10, wrap="word", state="disabled", font=("Consolas", 10))
-        self.output.pack(fill="both", expand=True)
+        actions = ttk.Frame(outer, style="App.TFrame")
+        actions.pack(fill="x", pady=(0, 12))
+        ttk.Button(
+            actions, text="Compresser", command=self.compress, style="Primary.TButton"
+        ).pack(side="left", padx=(0, 8))
+        ttk.Button(
+            actions, text="Décompresser", command=self.decompress, style="Secondary.TButton"
+        ).pack(side="left")
+        ttk.Button(
+            actions, text="Effacer les résultats", command=self.clear, style="Secondary.TButton"
+        ).pack(side="right")
 
-        ttk.Label(outer, textvariable=self.status, foreground="#245a38").pack(anchor="w", pady=(10, 0))
-        ttk.Label(outer, text="Conseil : teste un fichier texte, un audio, une image et une vidéo.", font=("Arial", 9)).pack(anchor="w", pady=(5, 0))
+        results = ttk.LabelFrame(
+            outer,
+            text="  3  ·  Résultats  ",
+            style="Section.TLabelframe",
+            padding=12,
+        )
+        results.pack(fill="both", expand=True)
+        results.rowconfigure(0, weight=1)
+        results.columnconfigure(0, weight=1)
+        self.output = tk.Text(
+            results,
+            height=10,
+            wrap="word",
+            state="disabled",
+            font=("Consolas", 10),
+            background="#f8fafc",
+            foreground=self.colors["text"],
+            insertbackground=self.colors["text"],
+            selectbackground="#bfdbfe",
+            relief="flat",
+            borderwidth=0,
+            padx=12,
+            pady=10,
+            highlightthickness=1,
+            highlightbackground=self.colors["border"],
+            highlightcolor=self.colors["primary"],
+        )
+        self.output.grid(row=0, column=0, sticky="nsew")
+        scrollbar = ttk.Scrollbar(results, orient="vertical", command=self.output.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.output.configure(yscrollcommand=scrollbar.set)
+
+        footer = ttk.Frame(outer, style="App.TFrame")
+        footer.pack(fill="x", pady=(12, 0))
+        ttk.Label(footer, textvariable=self.status, style="Status.TLabel").pack(
+            side="left"
+        )
+        ttk.Label(
+            footer,
+            text="Formats déjà compressés : la taille peut peu diminuer.",
+            background=self.colors["background"],
+            foreground=self.colors["muted"],
+            font=("Segoe UI", 9),
+        ).pack(side="right")
+
+    def _on_algorithm_change(self, event=None):
+        if event is not None and event.widget is not self.algorithm_combo:
+            return
+        is_bzip2 = self.algorithm.get() == "BZIP2"
+        minimum = 1 if is_bzip2 else 0
+        self.level_spinbox.configure(from_=minimum, to=9)
+        if self.level.get() < minimum:
+            self.level.set(minimum)
+        if is_bzip2:
+            self.level_hint.set("BZIP2 : de 1 (rapide) à 9 (meilleure compression).")
+        else:
+            self.level_hint.set("De 0 (rapide) à 9 (meilleure compression).")
 
     def choose_file(self):
         path = filedialog.askopenfilename(title="Sélectionner un fichier")
